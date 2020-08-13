@@ -17,8 +17,7 @@ class ApiController extends Controller
         return date("Y-m-d H:i:s.z", time());
     }
 
-    protected function get_login(){
-        dd(2);
+    protected function post_login(){
         if($this->checkAuth() === TRUE){
 
             $payload = [
@@ -26,11 +25,9 @@ class ApiController extends Controller
                 'key' => "Xoh4ahz5mo",
                 'exp_date' => date(time()+"10 Days"),
             ];
-            $jwt = JWT::encode($payload, getenv('JWT_SECRET'));
+            $jwt = JWT::encode($payload, env_get('JWT_SECRET'));
 
-            dd($jwt);
-
-            return http_response_code(200);
+            return json_encode($jwt);
         }
         else return $this->returnReject();
     }
@@ -46,7 +43,15 @@ class ApiController extends Controller
     }
 
     private function checkAuth(){
-        return ($this->data['post_data']['username'] == 'admin' && $this->data['post_data']['password'] == '123456');
+        if(isset($this->data['post_data']['token'])){
+            try{
+                $decoded = JWT::decode($this->data['post_data']['token'], env_get('JWT_SECRET'), array('HS256'));
+                return (isset($decoded->key) && $decoded->key == 'Xoh4ahz5mo');
+            }
+            catch(\Exception $e){
+            }
+        }
+        else return ($this->data['post_data']['username'] == 'admin' && $this->data['post_data']['password'] == '123456');
     }
 
     private function returnReject(){
